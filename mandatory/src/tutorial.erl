@@ -23,7 +23,7 @@ hello() ->
 %%%%%%%%%%  Recursive functions %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% @doc TODO: add description here
+%% @doc TODO: Prints "Hello!" once.
 -spec hello(N::integer()) -> ok.
 
 hello(0) ->
@@ -66,7 +66,7 @@ fac_tr(N) ->
 fac_tr(0, Acc) ->
     Acc;
 fac_tr(N, Acc) ->
-    tbi.
+    fac_tr(N-1,N*Acc).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,6 +90,7 @@ fac_tr(N, Acc) ->
 right_triangles(N) ->
     L = lists:seq(1, N),
     tbi.
+    
 
 %% @doc Returns a list of tuples, where each tuple describes a caracter in the Simposon family.
 %%
