@@ -88,9 +88,12 @@ fac_tr(N, Acc) ->
       C::integer().
 
 right_triangles(N) ->
-    L = lists:seq(1, N),
-    tbi.
-    
+    [ {A, B, C} ||
+        A <- lists:seq(1, N),
+        B <- lists:seq(1, N),
+        C <- lists:seq(1, N),
+        A*A + B*B == C*C
+    ].
 
 %% @doc Returns a list of tuples, where each tuple describes a caracter in the Simposon family.
 %%
@@ -140,13 +143,13 @@ simpsons() ->
       Name::string().
 
 simpsons(names) ->
-    tbi;
+    [Name || {_, _, Name} <- simpsons()];
 simpsons(males) ->
-    tbi;
+    [Name || {_, Gender, Name} <- simpsons(), Gender == male];
 simpsons(females) ->
-    tbi;
+    [Name || {_, Gender, Name} <- simpsons(), Gender == female];
 simpsons(pets) ->
-    tbi.
+    [Name || {Type, _, Name} <- simpsons(), Type /= person].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Guarded Functions  %%%%%%%%%%
@@ -162,8 +165,9 @@ simpsons(pets) ->
 %% </div>
 -spec char_to_upper(char()) -> char().
 
-char_to_upper(Char) when true->
-    tbi.
+char_to_upper(Char) when Char > 122 -> Char;
+char_to_upper(Char) when Char < 97 -> Char;
+char_to_upper(Char) when true -> Char - 32.
 
 %% @doc Convert a character to lower case.
 %% === Example ===
@@ -175,8 +179,9 @@ char_to_upper(Char) when true->
 %% </div>
 -spec char_to_lower(char()) -> char().
 
-char_to_lower(Char) when true ->
-    tbi.
+char_to_lower(Char) when Char > 90 -> Char;
+char_to_lower(Char) when Char < 65 -> Char;
+char_to_lower(Char) when true -> Char + 32.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Map  %%%%%%%%%%
@@ -193,7 +198,7 @@ char_to_lower(Char) when true ->
 -spec str_to_upper(string()) -> string().
 
 str_to_upper(String) ->
-    tbi.
+    lists:map(char_to_upper, String).
 
 
 %% @doc Convert a string to lower case.
@@ -205,7 +210,9 @@ str_to_upper(String) ->
 -spec str_to_lower(string()) -> string().
 
 str_to_lower(String) ->
-    tbi.
+    lists:map(char_to_lower, String).
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Fold %%%%%%%%%%
