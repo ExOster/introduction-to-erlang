@@ -5,11 +5,13 @@
 -module(fifo).
 -export([new/0, size/1, push/2, pop/1, empty/1]).
 
+
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
 
 %% @doc Creates an empty FIFO buffer.
 -opaque fifo()::{fifo, list(), list()}.
+-export_type [fifo/0].
 -spec new() -> fifo().
 
 %% Represent the FIFO using a 3-tuple {fifo, In, Out} where In and
@@ -17,45 +19,50 @@
 
 new() -> {fifo, [], []}.
 
-%% @doc TODO Add a description
+%% @doc Checks size of Fifo
 -spec size(Fifo) -> integer() when
       Fifo::fifo().
 
 size({fifo, In, Out}) ->
     length(In) + length(Out).
 
-%% @doc TODO Add a description
-%% TODO: add a -spec type declaration
-
+%% @doc Pushes value to fifo
 %% To make it fast to push new values, add a new value to the head of
 %% In.
 
-push({fifo, In, Out}, X) ->
-    tbi.
+-spec push(Fifo, _) -> Fifo when
+    Fifo::fifo().   
 
-%% @doc TODO Add a description
+push({fifo, In, Out}, X) ->
+    {fifo, [X|In], Out}.
+
+%% @doc Pops value from fifo
 %% @throws 'empty fifo'
 %% TODO: add a -spec type declaration
 
 %% pop should return {Value, NewFifo}
+
+-spec pop(Fifo) -> {_, Fifo} when
+    Fifo::fifo().
 
 pop({fifo, [], []}) ->
     erlang:error('empty fifo');
 
 %% To make pop fast we want to pop of the head of the Out list.
 
-pop({fifo, In, [H|T]}) ->
-    tbi;
+pop({fifo, In, [_|T]}) ->
+    {fifo, In, T};
+
 
 %% When Out is empty, we must take a performance penalty. Use the
 %% reverse of In as the new Out and an empty lists as the new In, then
 %% pop as usual.
 
 pop({fifo, In, []}) ->
-    tbi.
+    pop({fifo, [], lists:reverse(In)}).
 
 
-%% @doc TODO Add a description
+%% @doc Returns true if Fifo is emty, else false.
 -spec empty(Fifo) -> boolean() when Fifo::fifo().
 
 empty({fifo, [], []}) ->
@@ -82,7 +89,7 @@ push_test() ->
     push(new(), a).
 
 push_pop_test() ->
-    ?assertMatch({a,_}, pop(push(new(), a))).
+    ?_assertMatch({a,_}, pop(push(new(), a))).
 
 
 f1() ->

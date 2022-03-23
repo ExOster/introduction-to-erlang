@@ -12,6 +12,8 @@
 	 odd_and_even/1
 	]).
 
+%% -import(String).
+
 
 %% @doc Prints "Hello!" to the terminal.
 -spec hello() -> ok.
@@ -183,6 +185,7 @@ char_to_lower(Char) when Char > 90 -> Char;
 char_to_lower(Char) when Char < 65 -> Char;
 char_to_lower(Char) when true -> Char + 32.
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Map  %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,8 +201,7 @@ char_to_lower(Char) when true -> Char + 32.
 -spec str_to_upper(string()) -> string().
 
 str_to_upper(String) ->
-    lists:map(char_to_upper, String).
-
+    [char_to_upper(X) || X <- String].
 
 %% @doc Convert a string to lower case.
 %% === Example ===
@@ -210,9 +212,7 @@ str_to_upper(String) ->
 -spec str_to_lower(string()) -> string().
 
 str_to_lower(String) ->
-    lists:map(char_to_lower, String).
-
-
+    [char_to_lower(X) || X <-String].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Fold %%%%%%%%%%
@@ -225,13 +225,17 @@ str_to_lower(String) ->
 %% 8'''
 %% </div>
 -spec max(L) -> M when
-      L::[integer()],
+      L::[integer()],   
       M::integer().
 
 max([H | T]) ->
-    F = tbi,
+    F = fun(A, B) -> 
+            case A > B of
+                true -> A;
+                false -> B
+            end
+        end,
     lists:foldl(F, H, T).
-
 
 %% @doc Returns the number of times Char occurs in String.
 %% === Example ===
@@ -245,8 +249,12 @@ max([H | T]) ->
       Char::char().
 
 count(String, Char) ->
-
-    F = tbi,
+    F = fun(A, Acc) ->
+            if 
+                A == Char -> Acc + 1;
+                true -> Acc
+            end
+        end,
 
     lists:foldl(F, 0, String).
 
