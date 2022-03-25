@@ -45,7 +45,7 @@ push({fifo, In, Out}, X) ->
 -spec pop(Fifo) -> {_, Fifo} when
     Fifo::fifo().
 
-pop({fifo, [], []}) ->
+pop({fifo, [], []}) ->if
     erlang:error('empty fifo');
 
 %% To make pop fast we want to pop of the head of the Out list.
@@ -97,10 +97,10 @@ f1() ->
 
 size_test_() ->
     F1 = f1(),
-    F2 = push(F1, atom),
+    F2 = push(F1, atom),    
     {_, F3} = fifo:pop(F2),
 
-    [?_assertMatch(3, fifo:size(F1)),
+    [?_assertMatch(3, fifo:size(F1)),   
      ?_assertMatch(4, fifo:size(F2)),
      ?_assertMatch(3, fifo:size(F3))].
 
