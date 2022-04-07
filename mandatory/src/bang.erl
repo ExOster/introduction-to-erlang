@@ -6,17 +6,24 @@
 -module(bang).
 -export([start/0]).
 
-
-%% @doc Start the system. 
--spec start() -> ok. 
+%% @doc Start the system.
+-spec start() -> ok.
 start() ->
+    process_flag(trap_exit, true),
     io:format("~nSupervisor with PID ~p started~n", [self()]),
-
-    %% TODO: trap the exit signal.
 
     Counter = 5,
     start_bang(Counter),
     supervisor_loop(Counter).
+
+% receive
+%     {'EXIT', PID, 'BANG'} ->
+%         io:format("Worker ~p terminated with reason ~w!~n", [PID, 'BANG']);
+%     {'EXIT', PID, 'random_death'} ->
+%         io:format("Worker ~p terminated with reason ~w!~n", [PID, 'random_death'])
+% end.
+
+%% TODO: trap the exit signal.
 
 start_bang(Counter) ->
     Supervisor = self(),
@@ -31,8 +38,12 @@ supervisor_loop(Counter) ->
         {countdown, N} ->
             io:format("~w ~s~n", [N, counter_msg(N)]),
             supervisor_loop(N - 1);
-        {'EXIT', PID, Reason} ->
-            io:format("Process ~w terminated with reason ~w!~n", [PID, Reason])
+        {'EXIT', PID, bang} ->
+            io:format("Process ~w terminated with reason ~w!~n", [PID, 'BANG']);
+        {'EXIT', PID, random_death} ->
+            io:format("Worker ~p terminated with reason ~w!~n", [PID, random_death]),
+            start_bang(Counter),
+            supervisor_loop(Counter)
     end.
 
 bang(Supervisor, 0) ->
@@ -41,6 +52,6 @@ bang(Supervisor, 0) ->
     exit(bang);
 bang(Supervisor, Counter) ->
     timer:sleep(1000),
-    %% death:gamble(0.3),
+    death:gamble(0.3),
     Supervisor ! {countdown, Counter},
     bang(Supervisor, Counter - 1).

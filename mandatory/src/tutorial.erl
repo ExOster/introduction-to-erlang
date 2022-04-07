@@ -25,7 +25,7 @@ hello() ->
 %%%%%%%%%%  Recursive functions %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% @doc TODO: Prints "Hello!" once.
+%% @doc Prints "Hello!" once.
 -spec hello(N::integer()) -> ok.
 
 hello(0) ->
@@ -185,7 +185,6 @@ char_to_lower(Char) when Char > 90 -> Char;
 char_to_lower(Char) when Char < 65 -> Char;
 char_to_lower(Char) when true -> Char + 32.
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Map  %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -274,7 +273,8 @@ count(String, Char) ->
 odd_and_even(List) ->
     F = fun(X, {{odd, Odd}, {even, Even}}) when X rem 2 == 0 ->
                 {{odd, Odd}, {even, [X | Even]}};
-           (X, {{odd, Odd}, {even, Even}})  -> tbi
+           (X, {{odd, Odd}, {even, Even}})  ->
+                {{odd, [X|Odd]}, {even,Even}}
         end,
 
     lists:foldl(F, {{odd, []}, {even, []}}, List).

@@ -16,9 +16,9 @@
 %% processes. In this module we spawn a new process to keep the state
 %% of a FIFO queue.
 
-
 %% @doc Creates a new FIFO queue.
--opaque sfifo()::pid().
+-opaque sfifo() :: pid().
+-export_type([sfifo/0]).
 -spec new() -> sfifo().
 
 new() ->
@@ -28,58 +28,77 @@ new() ->
 
 loop(Fifo) ->
     receive
-	{size, PID} ->
-	    PID ! {size, fifo:size(Fifo)},
-	    loop(Fifo);
-	{empty, PID} ->
-	    PID ! fifo:empty(Fifo),
-	    loop(Fifo)
+        {size, PID} ->
+            PID ! {size, fifo:size(Fifo)},
+            loop(Fifo);
+        {empty, PID} ->
+            PID ! fifo:empty(Fifo),
+            loop(Fifo);
+        {push, PID, X} ->
+            Fifo2 = fifo:push(Fifo, X),
+            PID ! {push, ok},
+            loop(Fifo2);
+        {pop, PID} ->
+            case fifo:empty(Fifo) of
+                false ->
+                    {H, Fifo_after_pop} = fifo:pop(Fifo),
+                    Test = Fifo_after_pop,
+                    PID ! {pop, H};
+                true ->
+                    PID ! {error, 'empty fifo'},
+                    Test = Fifo
+            end,
+            loop(Test)
     end.
-
 
 %%  By hiding the message passing protocol inside a functional
 %%  interface the user of the FIFO doesn't need to know whether or not
 %%  the FIFO is implemented as a separate process.
 
 %% @doc Returns the number of elements in Fifo.
--spec size(Fifo) -> integer() when Fifo::sfifo().
+-spec size(Fifo) -> integer() when Fifo :: sfifo().
 
 size(Fifo) ->
     Fifo ! {size, self()},
     receive
-	{size, Size} ->
-	    Size
+        {size, Size} ->
+            Size
     end.
 
 %% @doc Returns true if Fifo is empty, otherwise returns false.
--spec empty(Fifo) -> true|false when Fifo::sfifo().
+-spec empty(Fifo) -> true | false when Fifo :: sfifo().
 
 empty(Fifo) ->
     Fifo ! {empty, self()},
     receive
-	true ->
-	    true;
-	false  ->
-	    false
+        true ->
+            true;
+        false ->
+            false
     end.
 
 %% @doc Pops a value from Fifo.
--spec pop(Fifo) -> term() when Fifo::sfifo().
+-spec pop(Fifo) -> term() when Fifo :: sfifo().
 
 pop(Fifo) ->
     Fifo ! {pop, self()},
     receive
-        A -> io:format("~p", [A])
+        {pop, Value} ->
+            Value;
+        {error, _} ->
+            {error, 'empty fifo'}
     end.
-
 %% @doc Push a new value to Fifo.
 -spec push(Fifo, Value) -> ok when
-      Fifo::sfifo(),
-      Value::term().
+    Fifo :: sfifo(),
+    Value :: term().
+
 push(Fifo, Value) ->
-    ok.
-
-
+    Fifo ! {push, self(), Value},
+    receive
+        {_, ok} -> ok;
+        _ -> not_ok
+    end.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                         EUnit Test Cases                                  %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,28 +109,30 @@ push(Fifo, Value) ->
 %% called automatically by sfifo:test()
 
 start_test_() ->
-    [?_assertMatch(true,                      is_pid(new())),
-     ?_assertMatch(0,                     sfifo:size(new())),
-     ?_assertMatch(true,                       empty(new())),
-     ?_assertMatch({error, 'empty fifo'},        pop(new()))].
+    [
+        ?_assertMatch(true, is_pid(new())),
+        ?_assertMatch(0, sfifo:size(new())),
+        ?_assertMatch(true, empty(new())),
+        ?_assertMatch({error, 'empty fifo'}, pop(new()))
+    ].
 
 empty_test() ->
-    F =  new(),
-    ?assertMatch(true,  empty(F)),
+    F = new(),
+    ?assertMatch(true, empty(F)),
     push(F, foo),
     ?assertMatch(false, empty(F)),
     pop(F),
-    ?assertMatch(true,  empty(F)).
+    ?assertMatch(true, empty(F)).
 
 push_pop_test() ->
     F = new(),
     push(F, foo),
     push(F, bar),
     push(F, luz),
-    ?assertMatch(false,               empty(F)),
-    ?assertMatch(foo,                   pop(F)),
-    ?assertMatch(bar,                   pop(F)),
-    ?assertMatch(luz,                   pop(F)),
+    ?assertMatch(false, empty(F)),
+    ?assertMatch(foo, pop(F)),
+    ?assertMatch(bar, pop(F)),
+    ?assertMatch(luz, pop(F)),
     ?assertMatch({error, 'empty fifo'}, pop(F)).
 
 large_push_pop_test() ->

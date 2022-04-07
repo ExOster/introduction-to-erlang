@@ -5,13 +5,12 @@
 -module(fifo).
 -export([new/0, size/1, push/2, pop/1, empty/1]).
 
-
 %% To use EUnit we must include this:
 -include_lib("eunit/include/eunit.hrl").
-
+-import(lists, [reverse/1, append/2]).
 %% @doc Creates an empty FIFO buffer.
--opaque fifo()::{fifo, list(), list()}.
--export_type [fifo/0].
+-opaque fifo() :: {fifo, list(), list()}.
+-export_type([fifo/0]).
 -spec new() -> fifo().
 
 %% Represent the FIFO using a 3-tuple {fifo, In, Out} where In and
@@ -19,51 +18,48 @@
 
 new() -> {fifo, [], []}.
 
-%% @doc Checks size of Fifo
+%% @doc Returns size of Fifo
 -spec size(Fifo) -> integer() when
-      Fifo::fifo().
+    Fifo :: fifo().
 
 size({fifo, In, Out}) ->
     length(In) + length(Out).
 
-%% @doc Pushes value to fifo
+%% @doc Pushes term to Fifo
+-spec push(Fifo, _) -> Fifo when
+    Fifo :: fifo().
+
 %% To make it fast to push new values, add a new value to the head of
 %% In.
 
--spec push(Fifo, _) -> Fifo when
-    Fifo::fifo().   
-
 push({fifo, In, Out}, X) ->
-    {fifo, [X|In], Out}.
+    In_new = [X | In],
+    New_fifo = {fifo, In_new, Out},
+    New_fifo.
 
-%% @doc Pops value from fifo
+%% @doc Pops value from Fifo
 %% @throws 'empty fifo'
 %% TODO: add a -spec type declaration
+-spec pop(Fifo) -> {_, Fifo} when
+    Fifo :: fifo().
 
 %% pop should return {Value, NewFifo}
 
--spec pop(Fifo) -> {_, Fifo} when
-    Fifo::fifo().
-
-pop({fifo, [], []}) ->if
+pop({fifo, [], []}) ->
     erlang:error('empty fifo');
-
 %% To make pop fast we want to pop of the head of the Out list.
 
-pop({fifo, In, [_|T]}) ->
-    {fifo, In, T};
-
-
+pop({fifo, In, [H | T]}) ->
+    {H, {fifo, In, T}};
 %% When Out is empty, we must take a performance penalty. Use the
 %% reverse of In as the new Out and an empty lists as the new In, then
 %% pop as usual.
 
 pop({fifo, In, []}) ->
-    pop({fifo, [], lists:reverse(In)}).
+    pop({fifo, [], reverse(In)}).
 
-
-%% @doc Returns true if Fifo is emty, else false.
--spec empty(Fifo) -> boolean() when Fifo::fifo().
+%% @doc Returns true if Fifo is empty, else false
+-spec empty(Fifo) -> boolean() when Fifo :: fifo().
 
 empty({fifo, [], []}) ->
     true;
@@ -79,38 +75,41 @@ empty({fifo, _, _}) ->
 %% All functions with names ending wiht _test() or _test_() will be
 %% called automatically by fifo:test()
 
-
 new_test_() ->
-    [?_assertEqual({fifo, [], []}, new()),
-     ?_assertMatch(0, fifo:size(new())),
-     ?_assertException(error, 'empty fifo', pop(new()))].
+    [
+        ?_assertEqual({fifo, [], []}, new()),
+        ?_assertMatch(0, fifo:size(new())),
+        ?_assertException(error, 'empty fifo', pop(new()))
+    ].
 
 push_test() ->
     push(new(), a).
 
 push_pop_test() ->
-    ?_assertMatch({a,_}, pop(push(new(), a))).
-
+    ?assertMatch({a, _}, pop(push(new(), a))).
 
 f1() ->
     push(push(push(new(), foo), bar), "Ahloa!").
 
 size_test_() ->
     F1 = f1(),
-    F2 = push(F1, atom),    
+    F2 = push(F1, atom),
     {_, F3} = fifo:pop(F2),
 
-    [?_assertMatch(3, fifo:size(F1)),   
-     ?_assertMatch(4, fifo:size(F2)),
-     ?_assertMatch(3, fifo:size(F3))].
-
+    [
+        ?_assertMatch(3, fifo:size(F1)),
+        ?_assertMatch(4, fifo:size(F2)),
+        ?_assertMatch(3, fifo:size(F3))
+    ].
 
 push_test_() ->
     F1 = f1(),
     F2 = push(f1(), last),
 
-    [ ?_assertMatch(1, fifo:size(fifo:push(fifo:new(), a))),
-      ?_assertEqual(fifo:size(F1) + 1, fifo:size(F2))].
+    [
+        ?_assertMatch(1, fifo:size(fifo:push(fifo:new(), a))),
+        ?_assertEqual(fifo:size(F1) + 1, fifo:size(F2))
+    ].
 
 empty_test_() ->
     F = f1(),
@@ -118,8 +117,10 @@ empty_test_() ->
     {_, F3} = pop(F2),
     {_, F4} = pop(F3),
 
-    [?_assertMatch(true, empty(new())),
-     ?_assertMatch(false, empty(F)),
-     ?_assertMatch(false, empty(F2)),
-     ?_assertMatch(false, empty(F3)),
-     ?_assertMatch(true, empty(F4))].
+    [
+        ?_assertMatch(true, empty(new())),
+        ?_assertMatch(false, empty(F)),
+        ?_assertMatch(false, empty(F2)),
+        ?_assertMatch(false, empty(F3)),
+        ?_assertMatch(true, empty(F4))
+    ].
